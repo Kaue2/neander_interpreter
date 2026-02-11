@@ -33,6 +33,24 @@ impl Interpreter {
     }
 }
 
+fn get_rules() -> HashMap<u8, String> {
+    let mut m = HashMap::new();
+    m.insert(0, "NOP".to_string());
+    m.insert(16, "STA".to_string());
+    m.insert(32, "LDA".to_string());
+    m.insert(48, "ADD".to_string());
+    m.insert(64, "OR".to_string());
+    m.insert(80, "AND".to_string());
+    m.insert(96, "NOT".to_string());
+    m.insert(128, "JMP".to_string());
+    m.insert(144, "JN".to_string());
+    m.insert(160, "NOT".to_string());
+    m.insert(240, "NOT".to_string());
+
+
+    return m;
+}
+
 fn main() {
     
     let file = File::open("./exemplo.bin").unwrap();
