@@ -1,4 +1,6 @@
+use core::fmt;
 use std::collections::HashMap;
+use std::fmt::write;
 use std::fs::File;
 use std::io::{Read};
 use std::process;
@@ -7,6 +9,7 @@ struct  ErrorInvalidFormat;
 
 struct Interpreter {
     pub ac: i8,
+    pub pc: usize,
     pub memory: Vec<u8>,
     pub zero: bool,
     pub negative: bool,
@@ -24,12 +27,31 @@ impl Interpreter {
 
         let i = Interpreter { 
             ac:         0,
+            pc:         0,
             memory:     buffer,
             zero:       true,
             negative:   false 
         };
 
         return Ok(i);
+    }
+}
+
+impl fmt::Display for Interpreter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Interpreter state:")?;
+        writeln!(f, "AC: {}", self.ac)?;
+        writeln!(f, "PC: {}", self.pc)?;
+        writeln!(f, "Memory:")?;
+
+        for (i, byte) in self.memory.iter().enumerate() {
+            write!(f, " {:02X} ", byte)?;
+
+            if (i + 1) % 16 == 0 {
+                writeln!(f)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -62,12 +84,5 @@ fn main() {
         }
     };
     
-    for (i, byte_or_error) in inter.memory.bytes().enumerate() {
-        let byte = byte_or_error.unwrap();
-        print!(" {} ", byte);
-
-        if (i + 1) % 16 == 0 {
-            println!();
-        }
-    }
+    println!("{}", inter);
 }
