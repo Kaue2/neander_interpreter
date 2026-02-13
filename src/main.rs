@@ -1,18 +1,46 @@
 use core::fmt;
 use std::collections::HashMap;
-use std::fmt::write;
 use std::fs::File;
 use std::io::{Read};
 use std::process;
 
 struct  ErrorInvalidFormat;
+type InstructionFn = fn(&mut Interpreter, u8);
 
 struct Interpreter {
-    pub ac: i8,
+    pub ac: u8,
     pub pc: usize,
     pub memory: Vec<u8>,
     pub zero: bool,
     pub negative: bool,
+}
+
+// funções
+
+fn nop(_i: &mut Interpreter, _val: u8) {
+    return;
+}
+
+fn add(i: &mut Interpreter, val: u8) {
+    i.ac.saturating_add(val);
+}
+
+fn get_rules() -> HashMap<u8, InstructionFn> {
+    let mut m: HashMap<u8, InstructionFn> = HashMap::new();
+    m.insert(0, nop);
+    m.insert(16, todo!());
+    m.insert(32, todo!());
+    m.insert(48, add);
+    m.insert(64, todo!());
+    m.insert(80, todo!());
+    m.insert(96, todo!());
+    m.insert(128, todo!());
+    m.insert(144, todo!());
+    m.insert(160, todo!());
+    m.insert(240, todo!());
+
+
+    return m;
 }
 
 impl Interpreter {
@@ -35,6 +63,17 @@ impl Interpreter {
 
         return Ok(i);
     }
+
+    pub fn process(&mut self, rules: HashMap<u8, InstructionFn>) {
+        let mut instruction = true;
+        for pair in self.memory.chunks(2) .skip(2) { // pulando 2 primeiros pares
+            match rules.get(&pair[0]) {
+                Some(_) => {},
+                None => {}
+            }
+            println!("{} {}", pair[0], pair[1])
+        }
+    }
 }
 
 impl fmt::Display for Interpreter {
@@ -55,28 +94,12 @@ impl fmt::Display for Interpreter {
     }
 }
 
-fn get_rules() -> HashMap<u8, String> {
-    let mut m = HashMap::new();
-    m.insert(0, "NOP".to_string());
-    m.insert(16, "STA".to_string());
-    m.insert(32, "LDA".to_string());
-    m.insert(48, "ADD".to_string());
-    m.insert(64, "OR".to_string());
-    m.insert(80, "AND".to_string());
-    m.insert(96, "NOT".to_string());
-    m.insert(128, "JMP".to_string());
-    m.insert(144, "JN".to_string());
-    m.insert(160, "NOT".to_string());
-    m.insert(240, "NOT".to_string());
 
-
-    return m;
-}
 
 fn main() {
-    
     let file = File::open("./exemplo.bin").unwrap();
-    let inter: Interpreter = match Interpreter::new(file) {
+    let rules = get_rules();
+    let mut inter: Interpreter = match Interpreter::new(file) {
         Ok(i) => i,
         Err(ErrorInvalidFormat) => {
             println!("ERROR: invalid file format.");
@@ -85,4 +108,5 @@ fn main() {
     };
     
     println!("{}", inter);
+    inter.process(rules);
 }
