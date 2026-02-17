@@ -66,24 +66,61 @@ fn add(i: &mut Interpreter, address: usize) {
 }
 
 fn halt(i: &mut Interpreter, _address: usize) {
-    println!("Função halt");
+    // println!("Função halt");
     i.exit = true;
+}
+
+fn sta(i: &mut Interpreter, address: usize) {
+    println!("Função sta");
+    i.memory[address] = i.ac;
+}
+
+fn lda(i: &mut Interpreter, address: usize) {
+    println!("Função lda");
+    i.ac = i.memory[address];
+}
+
+fn or(i: &mut Interpreter, address: usize) {
+    i.ac = i.memory[address] | i.ac;
+}
+
+fn and(i: &mut Interpreter, address: usize) {
+    i.ac = i.memory[address] & i.ac;
+}
+
+fn not(i: &mut Interpreter, _address: usize) {
+    i.ac = !i.ac;
+}
+
+fn jmp(i: &mut Interpreter, address: usize) {
+    i.pc.0 = address as u8;
+}
+
+fn jn(i: &mut Interpreter, address: usize) {
+    if i.negative {
+        i.pc.0 = address as u8;
+    }
+}
+
+fn jz(i: &mut Interpreter, address: usize) {
+    if i.zero {
+        i.pc.0 = address as u8;
+    }
 }
 
 fn get_rules() -> HashMap<u8, InstructionFn> { 
     let mut m: HashMap<u8, InstructionFn> = HashMap::new();
     m.insert(0, nop);
-    m.insert(16, nop);
-    m.insert(32, nop);
+    m.insert(16, sta);
+    m.insert(32, lda);
     m.insert(48, add);
-    m.insert(64, nop);
-    m.insert(80, nop);
-    m.insert(96, nop);
-    m.insert(128, nop);
-    m.insert(144, nop);
-    m.insert(160, nop);
+    m.insert(64, or);
+    m.insert(80, and);
+    m.insert(96, not);
+    m.insert(128, jmp);
+    m.insert(144, jn);
+    m.insert(160, jz);
     m.insert(240, halt);
-
 
     return m;
 }
@@ -111,30 +148,33 @@ impl Interpreter {
         return Ok(i);
     }
 
+    fn fetch(&mut self) -> u8 {
+        let val = self.memory[self.pc.pos()];
+        self.pc.increment();
+        val
+    }   
+
     fn get_next_address(&mut self) -> usize {
-        self.pc.increment(); // pega o endereço
         // pega a linha e converte pro endereço real do array
         let address = usize::from(self.memory[self.pc.pos()] * 2 + 4);
+        self.pc.increment(); // pega o endereço
         address
     }
 
     pub fn process(&mut self, rules: HashMap<u8, InstructionFn>) {
         while !self.exit && self.pc.pos() < self.memory.len() {
-            let opcode_or_address = self.memory[self.pc.pos()];
-            //println!("Pc1: {}", self.pc);
+            let opcode = self.fetch();
 
-            if let Some(instruction) = rules.get(&opcode_or_address) {
-                if opcode_or_address == 0 || opcode_or_address == 240 {
+            if let Some(instruction) = rules.get(&opcode) {
+                if opcode == 0 || opcode == 240 {
                     instruction(self, 0);
                 } else {
                     let address = self.get_next_address();
-                    // println!("pc: {}", self.pc);
                     instruction(self, address);
                 }
             } else {
                 self.pc.increment();
             };
-            self.pc.increment();
         }
     }
 }
@@ -169,8 +209,8 @@ fn main() {
         },
     };
 
-    println!("{}", inter);
     inter.process(rules);
+    println!("{}", inter);
 }
 
 #[cfg(test)]
@@ -199,8 +239,8 @@ mod tests {
         if let Ok(mut inter) = Interpreter::new(file) {
             inter.process(rules);
 
-            assert_eq!(inter.ac, 33);
-            assert_eq!(inter.pc.address(), 5);
+            assert_eq!(inter.ac, 7);
+            assert_eq!(inter.pc.address(), 6);
         }
     }
 }
