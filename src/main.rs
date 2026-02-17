@@ -8,9 +8,31 @@ struct  ErrorInvalidFormat;
 type InstructionFn = fn(&mut Interpreter, usize);
 
 #[derive(Debug)]
+struct  ProgramCounter(u8);
+
+impl ProgramCounter {
+    fn increment(&mut self) {
+        self.0 = self.0.saturating_add(2);
+    }
+
+    fn pos(&self) -> usize{
+        self.0 as usize
+    }
+
+    // converte o endereço virtual para o endereço físico
+    fn address(&self) -> u8 {
+        (self.0.saturating_sub(4)) / 2 
+    }
+
+    fn value(&self) -> u8 {
+        self.0
+    }
+ }
+
+#[derive(Debug)]
 struct Interpreter {
     ac: u8,
-    pc: usize,
+    pc: ProgramCounter,
     memory: Vec<u8>,
     zero: bool,
     negative: bool,
@@ -21,7 +43,7 @@ impl Default for Interpreter {
     fn default() -> Self {
         Self {
             ac: 0,
-            pc: 4,
+            pc: ProgramCounter(4),
             memory: Vec::new(),
             zero: true,
             negative: false,
@@ -32,9 +54,8 @@ impl Default for Interpreter {
 
 // funções
 
-fn nop(i: &mut Interpreter, _address: usize) {
+fn nop(_i: &mut Interpreter, _address: usize) {
     // println!("Função nop");
-    i.next();
     return;
 }
 
@@ -42,7 +63,6 @@ fn add(i: &mut Interpreter, address: usize) {
     // println!("Função add");
     let val = i.memory[address];
     i.ac = i.ac.saturating_add(val);
-    i.next();
 }
 
 fn halt(i: &mut Interpreter, _address: usize) {
@@ -81,7 +101,7 @@ impl Interpreter {
         
         let i = Interpreter { 
             ac:         0,
-            pc:         4,
+            pc:         ProgramCounter(4),
             memory:     buffer,
             zero:       true,
             negative:   false,
@@ -91,21 +111,16 @@ impl Interpreter {
         return Ok(i);
     }
 
-    // vai pra próxima linha de instrução
-    fn next(&mut self) {
-        self.pc += 2;
-    }
-
     fn get_next_address(&mut self) -> usize {
-        self.next(); // pega o endereço
+        self.pc.increment(); // pega o endereço
         // pega a linha e converte pro endereço real do array
-        let address = usize::from(self.memory[self.pc] * 2 + 4);
+        let address = usize::from(self.memory[self.pc.pos()] * 2 + 4);
         address
     }
 
     pub fn process(&mut self, rules: HashMap<u8, InstructionFn>) {
-        while !self.exit && self.pc < self.memory.len() {
-            let opcode_or_address = self.memory[self.pc];
+        while !self.exit && self.pc.pos() < self.memory.len() {
+            let opcode_or_address = self.memory[self.pc.pos()];
             //println!("Pc1: {}", self.pc);
 
             if let Some(instruction) = rules.get(&opcode_or_address) {
@@ -117,13 +132,10 @@ impl Interpreter {
                     instruction(self, address);
                 }
             } else {
-                self.next();
+                self.pc.increment();
             };
+            self.pc.increment();
         }
-    }
-
-    pub fn calculate_pc(&self) -> u8 {
-        return ((self.pc.saturating_sub(4)) / 2) as u8;
     }
 }
 
@@ -131,7 +143,7 @@ impl fmt::Display for Interpreter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Interpreter state:")?;
         writeln!(f, "AC: {}", self.ac)?;
-        writeln!(f, "PC: {}", self.calculate_pc())?;
+        writeln!(f, "PC: {}", self.pc.address())?;
         writeln!(f, "Memory:")?;
 
         for (i, byte) in self.memory.iter().enumerate() {
@@ -172,12 +184,12 @@ mod tests {
         let mut i = Interpreter::default();
         i.memory = Vec::from([3, 78, 68, 82, 0, 0, 48, 0, 3, 0, 33, 0, 240, 0]);
         
-        assert_eq!(i.pc, 4);
-        assert_eq!(i.memory[i.pc], 0);
+        assert_eq!(i.pc.value(), 4);
+        assert_eq!(i.memory[i.pc.pos()], 0);
 
         i.process(get_rules());
 
         assert_eq!(i.ac, 33);
-        assert_eq!(i.pc, 12); 
+        assert_eq!(i.pc.value(), 14); 
     }
 }
