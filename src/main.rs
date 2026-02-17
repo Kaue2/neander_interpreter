@@ -32,15 +32,17 @@ impl Default for Interpreter {
 
 // funções
 
-fn nop(_i: &mut Interpreter, _address: usize) {
-    println!("Função nop");
+fn nop(i: &mut Interpreter, _address: usize) {
+    // println!("Função nop");
+    i.next();
     return;
 }
 
 fn add(i: &mut Interpreter, address: usize) {
-    println!("Função add");
+    // println!("Função add");
     let val = i.memory[address];
     i.ac = i.ac.saturating_add(val);
+    i.next();
 }
 
 fn halt(i: &mut Interpreter, _address: usize) {
@@ -69,6 +71,7 @@ fn get_rules() -> HashMap<u8, InstructionFn> {
 impl Interpreter {
     pub fn new(mut file: File) -> Result<Self, ErrorInvalidFormat> {
         let required_format: [u8; 4] = [3, 78, 68, 82]; // 03 N D R format 
+
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer).unwrap();
 
@@ -93,22 +96,29 @@ impl Interpreter {
         self.pc += 2;
     }
 
+    fn get_next_address(&mut self) -> usize {
+        self.next(); // pega o endereço
+        // pega a linha e converte pro endereço real do array
+        let address = usize::from(self.memory[self.pc] * 2 + 4);
+        address
+    }
+
     pub fn process(&mut self, rules: HashMap<u8, InstructionFn>) {
         while !self.exit && self.pc < self.memory.len() {
             let opcode_or_address = self.memory[self.pc];
-            println!("code: {}", opcode_or_address);
+            //println!("Pc1: {}", self.pc);
+
             if let Some(instruction) = rules.get(&opcode_or_address) {
                 if opcode_or_address == 0 || opcode_or_address == 240 {
                     instruction(self, 0);
-                    self.next();
                 } else {
-                    self.next();
-                    println!("pc: {}", self.pc);
-                    let address = usize::from(self.memory[self.pc] * 2 + 4); // pega a linha e converte pro endereço real do array
+                    let address = self.get_next_address();
+                    // println!("pc: {}", self.pc);
                     instruction(self, address);
                 }
+            } else {
+                self.next();
             };
-            
         }
     }
 
@@ -138,40 +148,36 @@ impl fmt::Display for Interpreter {
 
 
 fn main() {
-    /*
     let file = File::open("./exemplo.bin").unwrap();
     let rules = get_rules();
-    let mut inter: Interpreter = match Interpreter::new(file) {
+
+    let mut inter = match Interpreter::new(file) {
         Ok(i) => i,
         Err(ErrorInvalidFormat) => {
-            println!("ERROR: invalid file format.");
+            eprintln!("ERROR: formato inválido do buffer recebido");
             process::exit(1);
-        }
+        },
     };
-     */
-    let rules = get_rules();
-    let mut inter: Interpreter = Default::default();
-    inter.memory = Vec::from([3, 78, 68, 82, 0, 0, 48, 0, 3, 0, 33, 0, 240, 0]);
-    inter.pc = 4;
-    
+
     println!("{}", inter);
     inter.process(rules);
 }
 
 #[cfg(test)]
 mod tests {
-    use std::default;
-
     use crate::{Interpreter, get_rules};
-
 
     #[test]
     fn rules() {
         let mut i = Interpreter::default();
         i.memory = Vec::from([3, 78, 68, 82, 0, 0, 48, 0, 3, 0, 33, 0, 240, 0]);
-        i.pc = 4;
+        
+        assert_eq!(i.pc, 4);
+        assert_eq!(i.memory[i.pc], 0);
+
         i.process(get_rules());
 
         assert_eq!(i.ac, 33);
+        assert_eq!(i.pc, 12); 
     }
 }
