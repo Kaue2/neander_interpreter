@@ -157,8 +157,6 @@ impl fmt::Display for Interpreter {
     }
 }
 
-
-
 fn main() {
     let file = File::open("./exemplo.bin").unwrap();
     let rules = get_rules();
@@ -178,6 +176,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use crate::{Interpreter, get_rules};
+    use std::fs::File;
 
     #[test]
     fn rules() {
@@ -191,5 +190,17 @@ mod tests {
 
         assert_eq!(i.ac, 33);
         assert_eq!(i.pc.value(), 14); 
+    }
+
+    #[test]
+    fn process() {
+        let file = File::open("./exemplo.bin").unwrap();
+        let rules = get_rules();
+        if let Ok(mut inter) = Interpreter::new(file) {
+            inter.process(rules);
+
+            assert_eq!(inter.ac, 33);
+            assert_eq!(inter.pc.address(), 5);
+        }
     }
 }
