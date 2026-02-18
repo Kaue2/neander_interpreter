@@ -71,38 +71,44 @@ fn halt(i: &mut Interpreter, _address: usize) {
 }
 
 fn sta(i: &mut Interpreter, address: usize) {
-    println!("Função sta");
+    // println!("Função sta");
     i.memory[address] = i.ac;
 }
 
 fn lda(i: &mut Interpreter, address: usize) {
-    println!("Função lda");
+    // println!("Função lda");
     i.ac = i.memory[address];
 }
 
 fn or(i: &mut Interpreter, address: usize) {
+    // println!("Função or");
     i.ac = i.memory[address] | i.ac;
 }
 
 fn and(i: &mut Interpreter, address: usize) {
+    // println!("Função and");
     i.ac = i.memory[address] & i.ac;
 }
 
 fn not(i: &mut Interpreter, _address: usize) {
+    // println!("Função not");
     i.ac = !i.ac;
 }
 
 fn jmp(i: &mut Interpreter, address: usize) {
+    // println!("Função jmp");
     i.pc.0 = address as u8;
 }
 
 fn jn(i: &mut Interpreter, address: usize) {
+    // println!("Função jn");
     if i.negative {
         i.pc.0 = address as u8;
     }
 }
 
 fn jz(i: &mut Interpreter, address: usize) {
+    // println!("Função jz");
     if i.zero {
         i.pc.0 = address as u8;
     }
@@ -156,7 +162,8 @@ impl Interpreter {
 
     fn get_next_address(&mut self) -> usize {
         // pega a linha e converte pro endereço real do array
-        let address = usize::from(self.memory[self.pc.pos()] * 2 + 4);
+        // println!("{}", self.pc.pos());
+        let address = usize::from(self.memory[self.pc.pos()]) * 2 + 4;
         self.pc.increment(); // pega o endereço
         address
     }
