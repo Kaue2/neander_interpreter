@@ -4,12 +4,12 @@ use ratatui::{
   style::{Color, Style, Stylize}, 
   symbols::border, 
   text::{Line, Span}, 
-  widgets::{Block, Borders, Paragraph}
+  widgets::{Block, Borders, Paragraph, Scrollbar}
 };
 
-use crate::Interpreter;
+use crate::{App, Interpreter};
 
-pub fn ui(frame: &mut Frame, interpreter: &Interpreter) {
+pub fn ui(frame: &mut Frame, interpreter: &Interpreter, app: &mut App) {
   let chunks = Layout::default()
     .direction(Direction::Horizontal)
     .constraints([
@@ -53,9 +53,15 @@ pub fn ui(frame: &mut Frame, interpreter: &Interpreter) {
   let program_paragraph = Paragraph::new(program_text)
     .gray()
     .centered()
-    .block(program_title_block);
+    .block(program_title_block)
+    .scroll((app.vertical_scroll as u16, 0));
 
   frame.render_widget(program_paragraph, chunks[0]);
   frame.render_widget(main_title_block, chunks[1]);
   frame.render_widget(data_title_block, chunks[2]);
+  frame.render_stateful_widget(
+    Scrollbar::new(ratatui::widgets::ScrollbarOrientation::VerticalRight), 
+    chunks[0], 
+    &mut app.vertical_scroll_state
+  );
 }
