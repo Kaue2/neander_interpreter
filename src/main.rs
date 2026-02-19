@@ -20,6 +20,7 @@ type InstructionFn = fn(&mut Interpreter, usize);
 #[derive(Debug)]
 struct  ProgramCounter(u8);
 
+#[derive(Default)]
 struct App {
     pub vertical_scroll_state: ScrollbarState,
     pub vertical_scroll: usize,
@@ -259,9 +260,14 @@ impl fmt::Display for Interpreter {
     }
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, interpreter: &mut Interpreter) -> Result<bool, Box<dyn Error>> {
+fn run_app<B: Backend>(
+    terminal: &mut Terminal<B>,
+    interpreter: &mut Interpreter,
+    mut app: App
+) -> Result<bool, Box<dyn Error>> {
     loop {
-        terminal.draw(|f| ui(f, interpreter)).map_err(|e| e.to_string())?;
+        terminal.draw(|f| ui(f, interpreter, &mut app))
+            .map_err(|e| e.to_string())?;
 
         if let Event::Key(key) = event::read()? {
             if key.kind == event::KeyEventKind::Release {
@@ -269,6 +275,16 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, interpreter: &mut Interpreter
             }
 
             match key.code {
+                KeyCode::Char('j') | KeyCode::Down => {
+                    app.vertical_scroll = app.vertical_scroll.saturating_add(1);
+                    app.vertical_scroll_state = 
+                        app.vertical_scroll_state.position(app.vertical_scroll);
+                }
+                KeyCode::Char('k') | KeyCode::Up => {
+                    app.vertical_scroll = app.vertical_scroll.saturating_sub(1);
+                    app.vertical_scroll_state = 
+                        app.vertical_scroll_state.position(app.vertical_scroll);
+                }
                 KeyCode::Char('q') => {
                     return Ok(true);
                 }
@@ -296,8 +312,10 @@ fn main() -> Result<(), Box<dyn Error>>{
         },
     };
 
+    let app = App::default();
+
     inter.process(rules);
-    let _res = run_app(&mut terminal, &mut inter);
+    let _res = run_app(&mut terminal, &mut inter, app);
 
     disable_raw_mode()?;
     execute!(
