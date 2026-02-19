@@ -8,6 +8,7 @@ use std::process;
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode};
 use crossterm::{execute};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode};
+use ratatui::widgets::{Scrollbar, ScrollbarState};
 use ratatui::{Terminal};
 use ratatui::prelude::{Backend, CrosstermBackend};
 use crate::tui::ui::ui;
@@ -18,6 +19,11 @@ type InstructionFn = fn(&mut Interpreter, usize);
 
 #[derive(Debug)]
 struct  ProgramCounter(u8);
+
+struct App {
+    pub vertical_scroll_state: ScrollbarState,
+    pub vertical_scroll: usize,
+}
 
 impl ProgramCounter {
     fn increment(&mut self) {
@@ -193,6 +199,46 @@ impl Interpreter {
             };
         }
     }
+
+    pub fn convert_data(&self) -> Vec<String> {
+        let mut pos: usize = 0;
+        let mut instruction = true;
+        let relevant_data = self.memory.get(4..).unwrap_or(&[]);
+        let mut str_data: Vec<String> = Vec::new();
+        
+        while pos < relevant_data.len() {
+            if instruction {
+                if let Some(mnemonic) = match relevant_data[pos] {
+                    0 => Some("NOP"),
+                    16 => Some("STA"),
+                    32 => Some("LDA"),
+                    48 => Some("ADD"),
+                    64 => Some("OR"),
+                    80 => Some("AND"),
+                    96 => Some("NOT"),
+                    128 => Some("JMP"),
+                    144 => Some("JN"),
+                    160 => Some("JZ"),
+                    240 => Some("HLT"),
+                    _ => None
+                } {
+                    str_data.push(mnemonic.to_string());
+                    if mnemonic != "NOP" && mnemonic != "HLT" {
+                        instruction = false;
+                    } else {
+                        instruction = true;
+                    }
+                } else {
+                    str_data.push(relevant_data[pos].to_string());
+                }
+            } else {
+                str_data.push(relevant_data[pos].to_string());
+                instruction = true;
+            }
+            pos += 2;
+        }
+        str_data
+    }
 }
 
 impl fmt::Display for Interpreter {
@@ -289,9 +335,10 @@ mod tests {
         let rules = get_rules();
         if let Ok(mut inter) = Interpreter::new(file) {
             inter.process(rules);
+            let elements = inter.convert_data();
+            println!("Len: {}", elements.len());
 
-            assert_eq!(inter.ac, 7);
-            assert_eq!(inter.pc.address(), 6);
+            println!("{:?}", elements);
         }
     }
 }

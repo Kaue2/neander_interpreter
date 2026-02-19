@@ -1,10 +1,10 @@
 use ratatui::{
   Frame, 
   layout::{Constraint, Direction, Layout}, 
-  style::{Color, Style}, 
+  style::{Color, Style, Stylize}, 
   symbols::border, 
-  text::{Line}, 
-  widgets::{Block, Borders}
+  text::{Line, Span}, 
+  widgets::{Block, Borders, Paragraph}
 };
 
 use crate::Interpreter;
@@ -40,7 +40,22 @@ pub fn ui(frame: &mut Frame, interpreter: &Interpreter) {
       .borders(Borders::ALL)
       .border_set(border::ROUNDED);
 
-  frame.render_widget(program_title_block, chunks[0]);
+  let mut program_text = Vec::<Line>::new();
+  let relevant_data = interpreter.memory.get(4..).unwrap_or(&[]);
+  let converted_data = interpreter.convert_data();
+  for (i, line) in relevant_data.chunks(2).enumerate() {
+    program_text.push(Line::from(Span::styled(
+      format!("{:03} - {:02X} - {:03}", i, line[0], converted_data[i]), 
+      Style::new().bold().fg(Color::White)
+    )));
+  };
+
+  let program_paragraph = Paragraph::new(program_text)
+    .gray()
+    .centered()
+    .block(program_title_block);
+
+  frame.render_widget(program_paragraph, chunks[0]);
   frame.render_widget(main_title_block, chunks[1]);
   frame.render_widget(data_title_block, chunks[2]);
 }
