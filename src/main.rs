@@ -22,8 +22,10 @@ struct  ProgramCounter(u8);
 
 #[derive(Default)]
 struct App {
-    pub vertical_scroll_state: ScrollbarState,
-    pub vertical_scroll: usize,
+    pub program_scroll_state: ScrollbarState,
+    pub program_scroll: usize,
+    pub data_scroll_state: ScrollbarState,
+    pub data_scroll: usize,
 }
 
 impl ProgramCounter {
@@ -275,15 +277,25 @@ fn run_app<B: Backend>(
             }
 
             match key.code {
-                KeyCode::Char('j') | KeyCode::Down => {
-                    app.vertical_scroll = app.vertical_scroll.saturating_add(1);
-                    app.vertical_scroll_state = 
-                        app.vertical_scroll_state.position(app.vertical_scroll);
+                KeyCode::Down => {
+                    app.program_scroll = app.program_scroll.saturating_add(1);
+                    app.program_scroll_state = 
+                        app.program_scroll_state.position(app.program_scroll);
                 }
-                KeyCode::Char('k') | KeyCode::Up => {
-                    app.vertical_scroll = app.vertical_scroll.saturating_sub(1);
-                    app.vertical_scroll_state = 
-                        app.vertical_scroll_state.position(app.vertical_scroll);
+                KeyCode::Up => {
+                    app.program_scroll = app.program_scroll.saturating_sub(1);
+                    app.program_scroll_state = 
+                        app.program_scroll_state.position(app.program_scroll);
+                }
+                KeyCode::Char('j') => {
+                    app.data_scroll = app.data_scroll.saturating_add(1);
+                    app.data_scroll_state = 
+                        app.data_scroll_state.position(app.data_scroll);
+                }
+                KeyCode::Char('k') => {
+                    app.data_scroll = app.data_scroll.saturating_sub(1);
+                    app.data_scroll_state = 
+                        app.data_scroll_state.position(app.data_scroll);
                 }
                 KeyCode::Char('q') => {
                     return Ok(true);
