@@ -78,15 +78,17 @@ pub fn ui(frame: &mut Frame, interpreter: &Interpreter, app: &mut App) {
   let text_ac = format!("ACC: {}", acc);
 
   let acc_art = BigText::builder()
-    .pixel_size(PixelSize::Full)
-    .style(Style::new().bold().fg(Color::Cyan))
+    .pixel_size(PixelSize::HalfHeight)
+    .style(Style::new().bold().fg(Color::Green))
     .lines(vec![Line::from(text_ac)])
+    .centered()
     .build();
   
   frame.render_widget(program_paragraph, chunks[0]);
+  let inner_area = main_title_block.inner(chunks[1]);
   frame.render_widget(main_title_block, chunks[1]);
   frame.render_widget(data_paragraph, chunks[2]);
-  frame.render_widget(acc_art, chunks[1]);
+  frame.render_widget(acc_art, inner_area);
 
   frame.render_stateful_widget(
     Scrollbar::new(ratatui::widgets::ScrollbarOrientation::VerticalRight)
