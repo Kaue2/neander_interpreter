@@ -8,7 +8,7 @@ use std::process;
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode};
 use crossterm::{execute};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode};
-use ratatui::widgets::{Scrollbar, ScrollbarState};
+use ratatui::widgets::{ScrollbarState};
 use ratatui::{Terminal};
 use ratatui::prelude::{Backend, CrosstermBackend};
 use crate::tui::ui::ui;

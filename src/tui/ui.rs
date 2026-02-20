@@ -1,12 +1,10 @@
-use std::fmt::format;
-
 use ratatui::{
   Frame, 
   layout::{Constraint, Direction, Layout}, 
   style::{Color, Style, Stylize}, 
   symbols::border, 
   text::{Line, Span}, 
-  widgets::{Block, Borders, Paragraph, Scrollbar}
+  widgets::{Block, Borders, Paragraph, Scrollbar, Padding}
 };
 
 use tui_big_text::{BigText, PixelSize};
@@ -33,6 +31,7 @@ pub fn ui(frame: &mut Frame, interpreter: &Interpreter, app: &mut App) {
   let main_title = Line::from(" Neander Interpreter ");
   let main_title_block = Block::default()
       .title(main_title.centered().style(Color::White))
+      .padding(Padding::new(1, 1, 1, 1))
       .style(Style::new().bold().fg(Color::Blue))
       .borders(Borders::ALL)
       .border_set(border::ROUNDED);
@@ -74,21 +73,52 @@ pub fn ui(frame: &mut Frame, interpreter: &Interpreter, app: &mut App) {
     .block(data_title_block)
     .scroll((app.data_scroll as u16, 0));
 
+  let acc_block = Block::default()
+    .title(Line::from(" Accumulator ").centered().fg(Color::White))
+    .padding(Padding::new(1, 1, 1, 1));
   let acc = format!("{:03}", interpreter.ac);
-  let text_ac = format!("ACC: {}", acc);
+  let text_acc = format!("ACC: {}", acc);
 
   let acc_art = BigText::builder()
     .pixel_size(PixelSize::HalfHeight)
     .style(Style::new().bold().fg(Color::Green))
-    .lines(vec![Line::from(text_ac)])
+    .lines(vec![Line::from(text_acc)])
     .centered()
     .build();
+
+  let pc_block = Block::default()
+    .title(Line::from(" Program Counter ").centered().centered().fg(Color::White))
+    .padding(Padding::new(1, 1, 1, 1));
+  let pc = format!("{:03}", interpreter.pc.address());
+  let text_pc = format!("PC: {}", pc);
+  
+  let pc_art = BigText::builder()
+  .pixel_size(PixelSize::HalfHeight)
+  .style(Style::new().bold().fg(Color::Green))
+  .lines(vec![Line::from(text_pc)])
+  .centered()
+  .build();
+  
+  let params_inner_area = main_title_block.inner(chunks[1]);
+
+  let div_params = Layout::default()
+    .direction(Direction::Horizontal)
+    .constraints([
+      Constraint::Percentage(50),
+      Constraint::Percentage(50),
+    ])
+    .split(params_inner_area);
+
+  let acc_inner_area = acc_block.inner(div_params[0]);
+  let pc_inner_area = pc_block.inner(div_params[1]);
   
   frame.render_widget(program_paragraph, chunks[0]);
-  let inner_area = main_title_block.inner(chunks[1]);
   frame.render_widget(main_title_block, chunks[1]);
   frame.render_widget(data_paragraph, chunks[2]);
-  frame.render_widget(acc_art, inner_area);
+  frame.render_widget(acc_block, div_params[0]);
+  frame.render_widget(pc_block, div_params[1]);
+  frame.render_widget(acc_art, acc_inner_area);
+  frame.render_widget(pc_art, pc_inner_area);
 
   frame.render_stateful_widget(
     Scrollbar::new(ratatui::widgets::ScrollbarOrientation::VerticalRight)
