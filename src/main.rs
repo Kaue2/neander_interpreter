@@ -186,6 +186,20 @@ impl Interpreter {
         address
     }
 
+    fn check_flags(&mut self) {
+        if self.ac == 0 {
+            self.zero = true;
+        } else {
+            self.zero = false;
+        }
+
+        if self.ac >= 128 {
+            self.negative = true;
+        } else {
+            self.negative = false;
+        }
+    }
+
     pub fn process(&mut self, rules: HashMap<u8, InstructionFn>) {
         while !self.exit && self.pc.pos() < self.memory.len() {
             let opcode = self.fetch();
@@ -200,6 +214,7 @@ impl Interpreter {
             } else {
                 self.pc.increment();
             };
+            self.check_flags();
         }
     }
 
